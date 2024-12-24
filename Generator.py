@@ -14,20 +14,33 @@ cpp_template = """
 #define FLOAT float
 #define DOUBLE double
 
-void replaceBrackets(std::string& input) {
+using SimulatorCombinations = std::variant<{{types}}>;
+
+void Str_to_combination(std::string& input) {
+    std::string result;
+    bool previousWasComma = false;
     for (char& c : input) {
-        if (c == '(') c = '<';
-        else if (c == ')') c = '>';
+        if (c == '(') {
+            result += '<';
+        } else if (c == ')') {
+            result += '>';
+        } else if (c == ' ') {
+            if (previousWasComma) {
+                result += ' ';
+            }
+        } else {
+            result += c;
+            previousWasComma = (c == ',');
+        }
     }
+    input = result;
 }
 
-using FluidSimulatorVariant = std::variant<{{types}}>;
-
 int main(int argc, char* argv[]) {
-    std::unordered_map<std::string, int> params = { {{params}} };
-    std::vector<FluidSimulatorVariant> arr = { {{types_vec}} };
+    std::unordered_map<std::string, int> combinations = { {{params}} };
+    std::vector<SimulatorCombinations> arr = { {{types_vec}} };
 
-    std::string p_type, v_type, v_flow_type, size;
+    std::string p_type, v_type, v_flow_type, size, save_tick = "-1", input_file = "../fluid.json", num_ticks = "200";
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -35,22 +48,22 @@ int main(int argc, char* argv[]) {
         else if (arg.find("--v-type=") == 0) v_type = arg.substr(9);
         else if (arg.find("--v-flow-type=") == 0) v_flow_type = arg.substr(14);
         else if (arg.find("--size=") == 0) size = arg.substr(7);
+        else if (arg.find("--save_tick=") == 0) save_tick = arg.substr(12); 
+        else if (arg.find("--input_file=") == 0) input_file = arg.substr(13); 
+        else if (arg.find("--num_ticks=") == 0) num_ticks = arg.substr(11); 
     }
 
     std::string args_str = p_type + " " + v_type + " " + v_flow_type + ", " + size;
-    replaceBrackets(args_str);
+    Str_to_combination(args_str);
 
-    auto it = params.find(args_str);
-    if (it == params.end()) {
-        std::cout << "No suitable params for " << args_str << std::endl;
+    auto it = combinations.find(args_str);
+    if (it == combinations.end()) {
+        std::cout << "Not found combination for\\n" << args_str << std::endl;
         return 1;
     }
 
-    size_t T = 100;
-    size_t tick_for_save = 50;
-    std::string input_file = "../fluid.json";
     std::visit([&](auto& simulator) { 
-        simulator.runSimulation(T, tick_for_save, input_file); 
+        simulator.runSimulation(std::stoi(num_ticks), std::stoi(save_tick), input_file); 
     }, arr[it->second]);
     return 0;
 }

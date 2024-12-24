@@ -442,7 +442,7 @@ void Simulator<Ptype, VType, VFlowType, N, M>::runSimulation(size_t T, size_t sa
                 }
             }
         }
-        if ((i + 1) % save_interval == 0) {
+        if (save_interval == i + 1) {
             std::string filename = "../fluid_output.json";
             saveToJson(filename);
         }
