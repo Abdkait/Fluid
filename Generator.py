@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    size_t T = 2500;
+    size_t T = 100;
     size_t tick_for_save = 50;
     std::string input_file = "../fluid.json";
     std::visit([&](auto& simulator) { 
